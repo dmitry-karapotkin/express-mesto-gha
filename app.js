@@ -20,7 +20,7 @@ app.use((req, res, next) => {
 
 app.use('/users', userRouter);
 app.use('/cards', cardRouter);
-app.get('*', (req, res) => {
+app.use((req, res) => {
   res.status(404).send({ message: 'Запрашиваемый адрес не существует' });
 });
 

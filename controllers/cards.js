@@ -1,9 +1,16 @@
 const Card = require('../models/cards');
 
+class NotFoundError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'NotFoundError';
+  }
+}
+
 const handleError = (err, res) => {
-  if (err.name === 'CastError') {
-    res.status(404).send({ message: 'Запрашивемая карточка не найдена' });
-  } else if (err.name === 'ValidationError') {
+  if (err.name === 'NotFoundError') {
+    res.status(404).send({ message: 'Запрашиваемая карточка не найдена' });
+  } else if (err.name === 'ValidationError' || err.name === 'CastError') {
     res.status(400).send({ message: 'Переданные данные на карточку не прошли валидацию' });
   } else {
     res.status(500).send({ message: `На сервере произошла ошибка ${err.name} - ${err.message}` });
@@ -20,7 +27,12 @@ const getCards = (req, res) => {
 const deleteCard = (req, res) => {
   const { cardId } = req.params;
   Card.findByIdAndRemove(cardId)
-    .then(res.send({ message: `Карточка с ID ${cardId} удалена` }))
+    .then((data) => {
+      if (data === null) {
+        throw new NotFoundError('Запрашиваемая карточка не найдена');
+      }
+      res.send(data);
+    })
     .catch((err) => handleError(err, res));
 };
 
@@ -35,19 +47,37 @@ const createCard = (req, res) => {
 const likeCard = (req, res) => Card.findByIdAndUpdate(
   req.params.cardId,
   { $addToSet: { likes: req.user._id } },
-  { new: true },
+  {
+    new: true,
+    runValidators: true,
+    upsert: false,
+  },
 )
   .populate(['owner', 'likes'])
-  .then((data) => res.send(data))
+  .then((data) => {
+    if (data === null) {
+      throw new NotFoundError('Запрашиваемая карточка не найдена');
+    }
+    res.send(data);
+  })
   .catch((err) => handleError(err, res));
 
 const dislikeCard = (req, res) => Card.findByIdAndUpdate(
   req.params.cardId,
   { $pull: { likes: req.user._id } },
-  { new: true },
+  {
+    new: true,
+    runValidators: true,
+    upsert: false,
+  },
 )
   .populate(['owner', 'likes'])
-  .then((data) => res.send(data))
+  .then((data) => {
+    if (data === null) {
+      throw new NotFoundError('Запрашиваемая карточка не найдена');
+    }
+    res.send(data);
+  })
   .catch((err) => handleError(err, res));
 
 module.exports = {
