@@ -10,12 +10,12 @@ const {
 const HTTP_REGEX = require('../utils/constants');
 
 router.get('/', getUsers);
+router.get('/me', getMyUser);
 router.get('/:userId', celebrate({
   params: Joi.object().keys({
     userId: Joi.string().alphanum().required().length(24),
   }),
 }), getOneUser);
-router.get('/me', getMyUser);
 router.patch('/me', celebrate({
   body: Joi.object().keys({
     name: Joi.string().required().min(2).max(30),

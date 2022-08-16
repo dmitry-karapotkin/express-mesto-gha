@@ -32,7 +32,7 @@ const createUser = (req, res, next) => {
   bcrypt.hash(password, 10)
     .then((hash) => User.create({
       name, about, avatar, email, password: hash,
-    }))
+    }).select('-password'))
     .then((data) => res.send(data))
     .catch(next);
 };
@@ -83,6 +83,7 @@ const login = (req, res, next) => {
           httpOnly: true,
           maxAge: 604800,
         })
+        .send({ message: 'Вход выполнен успешно' })
         .end();
     })
     .catch(next);

@@ -19,7 +19,7 @@ router.get('/', getCards);
 router.post('/', celebrate({
   body: Joi.object().keys({
     name: Joi.string().required().min(2).max(30),
-    link: Joi.string().pattern(new RegExp(HTTP_REGEX)),
+    link: Joi.string().required().pattern(new RegExp(HTTP_REGEX)),
   }),
 }), createCard);
 router.delete('/:cardId', joiParamsCardId, deleteCard);
