@@ -1,50 +1,36 @@
 const Card = require('../models/cards');
+const NotFoundError = require('../errors/not-found-error');
 
-class NotFoundError extends Error {
-  constructor(message) {
-    super(message);
-    this.name = 'NotFoundError';
-  }
-}
-
-const handleError = (err, res) => {
-  if (err.name === 'NotFoundError') {
-    res.status(404).send({ message: 'Запрашиваемая карточка не найдена' });
-  } else if (err.name === 'ValidationError' || err.name === 'CastError') {
-    res.status(400).send({ message: 'Переданные данные на карточку не прошли валидацию' });
-  } else {
-    res.status(500).send({ message: `На сервере произошла ошибка ${err.name} - ${err.message}` });
-  }
-};
-
-const getCards = (req, res) => {
+const getCards = (req, res, next) => {
   Card.find({})
     .populate(['owner', 'likes'])
     .then((data) => res.send(data))
-    .catch((err) => handleError(err, res));
+    .catch(next);
 };
 
-const deleteCard = (req, res) => {
+const deleteCard = (req, res, next) => {
   const { cardId } = req.params;
-  Card.findByIdAndRemove(cardId)
+  Card.findById(cardId)
     .then((data) => {
       if (data === null) {
         throw new NotFoundError('Запрашиваемая карточка не найдена');
       }
-      res.send(data);
+      if (data.owner === req.user._id) {
+        Card.findByIdAndRemove(cardId);
+      }
     })
-    .catch((err) => handleError(err, res));
+    .catch(next);
 };
 
-const createCard = (req, res) => {
+const createCard = (req, res, next) => {
   const { name, link } = req.body;
   Card.create({ name, link, owner: req.user._id })
     .then((data) => data.populate('owner'))
     .then((data) => res.send(data))
-    .catch((err) => handleError(err, res));
+    .catch(next);
 };
 
-const likeCard = (req, res) => Card.findByIdAndUpdate(
+const likeCard = (req, res, next) => Card.findByIdAndUpdate(
   req.params.cardId,
   { $addToSet: { likes: req.user._id } },
   {
@@ -60,9 +46,9 @@ const likeCard = (req, res) => Card.findByIdAndUpdate(
     }
     res.send(data);
   })
-  .catch((err) => handleError(err, res));
+  .catch(next);
 
-const dislikeCard = (req, res) => Card.findByIdAndUpdate(
+const dislikeCard = (req, res, next) => Card.findByIdAndUpdate(
   req.params.cardId,
   { $pull: { likes: req.user._id } },
   {
@@ -78,7 +64,7 @@ const dislikeCard = (req, res) => Card.findByIdAndUpdate(
     }
     res.send(data);
   })
-  .catch((err) => handleError(err, res));
+  .catch(next);
 
 module.exports = {
   getCards,

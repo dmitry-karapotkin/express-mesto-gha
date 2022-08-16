@@ -1,29 +1,15 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/users');
+const NotFoundError = require('../errors/not-found-error');
 
-class NotFoundError extends Error {
-  constructor(message) {
-    super(message);
-    this.name = 'NotFoundError';
-  }
-}
-
-const handleError = (err, res) => {
-  if (err.name === 'NotFoundError') {
-    res.status(404).send({ message: err.message });
-  } else if (err.name === 'ValidationError' || err.name === 'CastError') {
-    res.status(400).send({ message: 'Переданные данные на пользователя не прошли валидацию' });
-  } else {
-    res.status(500).send({ message: `На сервере произошла ошибка ${err.name} - ${err.message}` });
-  }
-};
-
-const getUsers = (req, res) => {
+const getUsers = (req, res, next) => {
   User.find({})
     .then((data) => res.send(data))
-    .catch((err) => handleError(err, res));
+    .catch(next);
 };
 
-const getOneUser = (req, res) => {
+const getOneUser = (req, res, next) => {
   const { userId } = req.params;
   User.findById(userId)
     .then((data) => {
@@ -32,17 +18,26 @@ const getOneUser = (req, res) => {
       }
       res.send(data);
     })
-    .catch((err) => handleError(err, res));
+    .catch(next);
 };
 
-const createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
+const createUser = (req, res, next) => {
+  const {
+    name,
+    about,
+    avatar,
+    email,
+    password,
+  } = req.body;
+  bcrypt.hash(password, 10)
+    .then((hash) => User.create({
+      name, about, avatar, email, password: hash,
+    }))
     .then((data) => res.send(data))
-    .catch((err) => handleError(err, res));
+    .catch(next);
 };
 
-const updateUserInfo = (req, res) => {
+const updateUserInfo = (req, res, next) => {
   const { name, about } = req.body;
   const userId = req.user._id;
   User.findByIdAndUpdate(
@@ -55,10 +50,10 @@ const updateUserInfo = (req, res) => {
     },
   )
     .then((data) => res.send(data))
-    .catch((err) => handleError(err, res));
+    .catch(next);
 };
 
-const updateUserAvatar = (req, res) => {
+const updateUserAvatar = (req, res, next) => {
   const { avatar } = req.body;
   const userId = req.user._id;
   User.findByIdAndUpdate(
@@ -71,7 +66,33 @@ const updateUserAvatar = (req, res) => {
     },
   )
     .then((data) => res.send(data))
-    .catch((err) => handleError(err, res));
+    .catch(next);
+};
+
+const login = (req, res, next) => {
+  const { email, password } = req.body;
+  return User.findOneByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign(
+        { _id: user._id },
+        'awesome-difficulty',
+        { expiresIn: '7d' },
+      );
+      res
+        .cookie('jwt', token, {
+          httpOnly: true,
+          maxAge: 604800,
+        })
+        .end();
+    })
+    .catch(next);
+};
+
+const getMyUser = (req, res, next) => {
+  const userId = req.user._id;
+  User.findById(userId)
+    .then((data) => res.send(data))
+    .catch(next);
 };
 
 module.exports = {
@@ -80,4 +101,6 @@ module.exports = {
   createUser,
   updateUserInfo,
   updateUserAvatar,
+  login,
+  getMyUser,
 };
