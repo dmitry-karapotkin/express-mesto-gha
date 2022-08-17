@@ -8,7 +8,7 @@ const {
   dislikeCard,
 } = require('../controllers/cards');
 const HTTP_REGEX = require('../utils/constants');
-const validateCardId = require('../middlewares/validations');
+const { validateCardId } = require('../middlewares/validations');
 
 router.get('/', getCards);
 router.post('/', celebrate({
