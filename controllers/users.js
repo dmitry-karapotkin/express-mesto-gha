@@ -2,6 +2,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/users');
 const NotFoundError = require('../errors/not-found-error');
+const BadRequestError = require('../errors/bad-request-error');
+const EmailExistsError = require('../errors/email-exists-error');
 
 const getUsers = (req, res, next) => {
   User.find({})
@@ -39,7 +41,14 @@ const createUser = (req, res, next) => {
       avatar,
       email,
     }))
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'ValidationError' || err.name === 'CastError') {
+        next(new BadRequestError());
+      } else if (err.code === 11000) {
+        next(new EmailExistsError());
+      }
+      next(err);
+    });
 };
 
 const updateUserInfo = (req, res, next) => {
@@ -51,11 +60,15 @@ const updateUserInfo = (req, res, next) => {
     {
       new: true,
       runValidators: true,
-      upsert: false,
     },
   )
     .then((data) => res.send(data))
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'ValidationError' || err.name === 'CastError') {
+        next(new BadRequestError());
+      }
+      next(err);
+    });
 };
 
 const updateUserAvatar = (req, res, next) => {
@@ -71,7 +84,12 @@ const updateUserAvatar = (req, res, next) => {
     },
   )
     .then((data) => res.send(data))
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'ValidationError' || err.name === 'CastError') {
+        next(new BadRequestError());
+      }
+      next(err);
+    });
 };
 
 const login = (req, res, next) => {

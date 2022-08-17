@@ -1,6 +1,7 @@
 const Card = require('../models/cards');
 const NotFoundError = require('../errors/not-found-error');
 const ForbiddenError = require('../errors/forbidden-error');
+const BadRequestError = require('../errors/bad-request-error');
 
 const getCards = (req, res, next) => {
   Card.find({})
@@ -19,7 +20,7 @@ const deleteCard = (req, res, next) => {
       if (data.owner._id.toString() !== req.user._id) {
         throw new ForbiddenError();
       }
-      Card.findByIdAndRemove(cardId)
+      return Card.findByIdAndRemove(cardId)
         .then((card) => res.send({ message: `Карточка ${card.name} удалена` }));
     })
     .catch(next);
@@ -30,7 +31,12 @@ const createCard = (req, res, next) => {
   Card.create({ name, link, owner: req.user._id })
     .then((data) => data.populate('owner'))
     .then((data) => res.send(data))
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'ValidationError' || err.name === 'CastError') {
+        next(new BadRequestError());
+      }
+      next(err);
+    });
 };
 
 const likeCard = (req, res, next) => Card.findByIdAndUpdate(

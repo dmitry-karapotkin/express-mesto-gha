@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-const { celebrate, Joi } = require('celebrate');
 const BadAuthorizationError = require('../errors/bad-auth-error');
 
 const auth = (req, res, next) => {
@@ -14,13 +13,4 @@ const auth = (req, res, next) => {
   next();
 };
 
-const joiJwtCookie = celebrate({
-  cookies: Joi.object({
-    jwt: Joi.string().required(),
-  }),
-});
-
-module.exports = {
-  auth,
-  joiJwtCookie,
-};
+module.exports = auth;
