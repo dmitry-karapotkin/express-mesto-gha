@@ -14,8 +14,8 @@ const app = express();
 app.use(helmet());
 app.use(bodyParser.json());
 app.use(cookieParser());
-app.use(errors());
 app.use(router);
+app.use(errors());
 
 app.use((err, req, res, next) => {
   const statusCode = (!err.statusCode) ? 500 : err.statusCode;

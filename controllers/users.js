@@ -46,8 +46,9 @@ const createUser = (req, res, next) => {
         next(new BadRequestError());
       } else if (err.code === 11000) {
         next(new EmailExistsError());
+      } else {
+        next(err);
       }
-      next(err);
     });
 };
 
@@ -66,8 +67,9 @@ const updateUserInfo = (req, res, next) => {
     .catch((err) => {
       if (err.name === 'ValidationError' || err.name === 'CastError') {
         next(new BadRequestError());
+      } else {
+        next(err);
       }
-      next(err);
     });
 };
 
@@ -87,8 +89,9 @@ const updateUserAvatar = (req, res, next) => {
     .catch((err) => {
       if (err.name === 'ValidationError' || err.name === 'CastError') {
         next(new BadRequestError());
+      } else {
+        next(err);
       }
-      next(err);
     });
 };
 

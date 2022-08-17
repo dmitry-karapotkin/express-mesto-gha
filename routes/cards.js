@@ -8,12 +8,7 @@ const {
   dislikeCard,
 } = require('../controllers/cards');
 const HTTP_REGEX = require('../utils/constants');
-
-const joiParamsCardId = celebrate({
-  params: Joi.object().keys({
-    cardId: Joi.string().alphanum().required().length(24),
-  }),
-});
+const validateCardId = require('../middlewares/validations');
 
 router.get('/', getCards);
 router.post('/', celebrate({
@@ -22,8 +17,8 @@ router.post('/', celebrate({
     link: Joi.string().required().pattern(new RegExp(HTTP_REGEX)),
   }),
 }), createCard);
-router.delete('/:cardId', joiParamsCardId, deleteCard);
-router.put('/:cardId/likes', joiParamsCardId, likeCard);
-router.delete('/:cardId/likes', joiParamsCardId, dislikeCard);
+router.delete('/:cardId', validateCardId, deleteCard);
+router.put('/:cardId/likes', validateCardId, likeCard);
+router.delete('/:cardId/likes', validateCardId, dislikeCard);
 
 module.exports = router;

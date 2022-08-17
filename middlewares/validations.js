@@ -18,7 +18,14 @@ const validateAuthentication = celebrate({
   }),
 });
 
+const validateCardId = celebrate({
+  params: Joi.object().keys({
+    cardId: Joi.string().alphanum().required().length(24),
+  }),
+});
+
 module.exports = {
   validateNewUser,
   validateAuthentication,
+  validateCardId,
 };
